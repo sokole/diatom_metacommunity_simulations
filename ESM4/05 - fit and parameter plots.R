@@ -141,6 +141,39 @@ ggplot2::ggsave('FIG_density_fit.jpg', FIG_density_fit,
 ###########################################################
 ###########################################################
 
+
+# KS test -- is one distribution a random subset of the next?
+
+d_distribution_comparison_stats <- data.frame()
+for(i_meta_dyn in unique(d_plot$`Metacomm. Dynamic`)){
+  for(i_param in unique(d_plot$Parameter)){
+    
+    d_i <- d_plot %>%
+      dplyr::filter(
+        `Metacomm. Dynamic` == i_meta_dyn, 
+        Parameter == i_param)
+    
+    result_i <- ks.test(
+      d_i %>% filter(fit_type == 'Top 5%') %>% select(Value) %>% unlist(use.names = FALSE),
+      d_i %>% filter(fit_type == 'All') %>% select(Value) %>% unlist(use.names = FALSE))
+    
+    d_summary_i <- data.frame(
+      `Metacomm. Dynamic` = i_meta_dyn, 
+      Parameter = i_param,
+      D = result_i$statistic,
+      p_val = result_i$p.value,
+      p_val_rounded = result_i$p.value %>% round(3)
+    )
+    
+    d_distribution_comparison_stats <- d_distribution_comparison_stats %>%
+      bind_rows(d_summary_i)
+  }
+}
+
+write_csv(d_distribution_comparison_stats, 'RESULTS_d_distribution_comparison_stats_KS_test.csv')  
+
+
+
 # plot parameter values for best and all models
 
 FIG_boxplots_params <- d_plot %>% 

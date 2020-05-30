@@ -65,18 +65,38 @@ d_plot <- left_join(d_sim_metadata,
                                  levels = c('SSS', 'MSS', 'NM'))
   )
 
+# ---- Original Submission ----
+# FIG_agg_diversity_final_timestep <- d_plot %>% ggplot(
+#   aes(log(m_ratio), Value, 
+#       color = `Metacomm. Dynamic`)) +
+#   geom_point(alpha = 0.1, size = .75) +
+#   # geom_smooth(method = 'lm') +
+#   geom_smooth() +
+#   facet_grid(Diversity ~ `Metacomm. Dynamic`, scales = 'free') +
+#   theme_bw() +
+#   ylab('Diversity (order q = 1 species equivalents)') +
+#   # xlab('Log ratio immigration disparity') +
+#   xlab(expression(paste('log(',m[black],'/',m[orange],')'))) +
+#   geom_hline(aes(yintercept = value), d_agg_t1_summary,
+#              linetype = 'dashed',
+#              size = .75) +
+#   theme(legend.position="none")
 
+# ---- Revision 1 ----
 FIG_agg_diversity_final_timestep <- d_plot %>% ggplot(
-  aes(log(m_ratio), Value, 
+  # aes(log(m_ratio), Value, 
+  aes(x = `Metacomm. Dynamic`,
+      y = Value, 
       color = `Metacomm. Dynamic`)) +
-  geom_point(alpha = 0.1, size = .75) +
+  geom_boxplot(alpha = 0.1, size = .75) +
   # geom_smooth(method = 'lm') +
-  geom_smooth() +
-  facet_grid(Diversity ~ `Metacomm. Dynamic`, scales = 'free') +
+  # geom_smooth() +
+  # facet_grid(Diversity ~ `Metacomm. Dynamic`, scales = 'free') +
+  facet_grid(Diversity ~ ., scales = 'free') +
   theme_bw() +
   ylab('Diversity (order q = 1 species equivalents)') +
-  # xlab('Log ratio immigration disparity') +
-  xlab(expression(paste('log(',m[black],'/',m[orange],')'))) +
+  xlab('Metacomm. Dynamic') +
+  # xlab(expression(paste('log(',m[black],'/',m[orange],')'))) +
   geom_hline(aes(yintercept = value), d_agg_t1_summary,
              linetype = 'dashed',
              size = .75) +
@@ -85,7 +105,7 @@ FIG_agg_diversity_final_timestep <- d_plot %>% ggplot(
 
 # view plot
 graphics.off()
-windows(width = 4, height = 5, pointsize = 10)
+windows(width = 3, height = 5, pointsize = 10)
 print(FIG_agg_diversity_final_timestep)
 
 # savePlot('FIG_agg_diversity_final_timestep', 'pdf')
