@@ -1,21 +1,33 @@
+#' R Script 01 for:
+#' Sokol ER, Barrett JE, Kohler TJ, McKnight DM, Salvatore MR and Stanish LF (2020)
+#'  Evaluating Alternative Metacommunity Hypotheses for Diatoms in the McMurdo Dry
+#'  Valleys Using Simulations and Remote Sensing Data. Front. Ecol. Evol. 8:521668. 
+#'  doi: 10.3389/fevo.2020.521668
+#'
+#' @author Eric R. Sokol \email{esokol@battelleecology.org}
+#' 
+#' This R script imports a processed remote image and calculates NDVI for areas
+#' of interest in the Fryxell Basin in Taylor Valley, Antarctica. 
+
+
+# required R packages
 library(tidyverse)
 library(raster)
 library(ggplot2)
 
+
+# Read in processed remote imagery data. File may be available upon request
+# depending on data sharing permissions for past grantees who have used PGC 
+# imagery with NSF OPP grants.  
 image_tif <- raster('source_data/orthoWV02_15JAN211951582-M1BS-103001003ED2B400_u16ns3031_rad_atmcorr_refl_mask_NDVI_reduced.tif')
 # plot(image_tif)
 
 # str(image_tif)
 
+# convert image to a matrix
 image_txt <- as.matrix(image_tif)
-# image_log <- log1p(image_txt)
-# sum(is.infinite(image_log))
-# sum(!is.na(image_log))
-# 
-# min_val <- min(image_log, na.rm = TRUE)
-# max_val <- max(image_log, na.rm = TRUE)
-# image_log_01 <- (image_log - min_val) / (max_val - min_val)
 
+# check number rows and cols in matrix produced from image
 n_rows <- nrow(image_txt)
 n_cols <- ncol(image_txt)
 
@@ -32,6 +44,7 @@ color_breaks <- c(0, quantile(mat_to_plot, c(0.75, 0.9, .99, .999), na.rm = TRUE
 color_list <- RColorBrewer::brewer.pal((length(color_breaks) - 1), 'RdYlGn')
 color_list[1] <- 'light gray'
 
+# view matrix as an image, save as a jpg
 jpeg(filename="ndvi_full_scene.jpg")
 image(mat_to_plot,
       col = color_list,
@@ -68,6 +81,7 @@ color_breaks <- c(0, quantile(mat_to_plot, c(0.75, 0.9, .99, .999), na.rm = TRUE
 color_list <- RColorBrewer::brewer.pal((length(color_breaks) - 1), 'RdYlGn')
 color_list[1] <- 'light gray'
 
+# view cropped image and save as jpg
 jpeg(filename="ndvi_cropped_fryxell_basin.jpg")
 image(mat_to_plot,
       col = color_list,
@@ -147,4 +161,5 @@ dev.off()
   # scale_color_gradient2(low = 'white', mid = scales::muted('blue'), high = 'green',
   #                       midpoint = .225)
 
+# write out csv of NDVI values
 write_csv(image_txt_long_top, 'df_fryxell_basin_corrected_NDVI.csv')

@@ -1,12 +1,31 @@
-# # --------------------------------------------
+#' R Script 03 for:
+#' Sokol ER, Barrett JE, Kohler TJ, McKnight DM, Salvatore MR and Stanish LF (2020)
+#'  Evaluating Alternative Metacommunity Hypotheses for Diatoms in the McMurdo Dry
+#'  Valleys Using Simulations and Remote Sensing Data. Front. Ecol. Evol. 8:521668. 
+#'  doi: 10.3389/fevo.2020.521668
+#'
+#' @author Eric R. Sokol \email{esokol@battelleecology.org}
+#' 
+#' This R script creates a metadata file with information about each simulation 
+#' scenario parsed for its output filename. 
+
+
+
+
+# # -------------------------------------------
 # # -- INFO needed to calc stats
 # # --------------------------------------------
+
+
+# path to simulation output -- replace with your own path after running the simulations
 SIM_DIR_NAME <- 'C:/Users/esokol/Box/PROJECTS/B235/Metacomm Sims/R_sims_v2_10000_reps/SIM_RESULTS'
 
 # --------------------------------------------
 # --------------------------------------------
 # --------------------------------------------
 # --------------------------------------------
+
+# set options
 options(stringsAsFactors = FALSE)
 
 require(tidyverse)

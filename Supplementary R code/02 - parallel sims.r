@@ -1,25 +1,48 @@
+#' R Script 02 for:
+#' Sokol ER, Barrett JE, Kohler TJ, McKnight DM, Salvatore MR and Stanish LF (2020)
+#'  Evaluating Alternative Metacommunity Hypotheses for Diatoms in the McMurdo Dry
+#'  Valleys Using Simulations and Remote Sensing Data. Front. Ecol. Evol. 8:521668. 
+#'  doi: 10.3389/fevo.2020.521668
+#'
+#' @author Eric R. Sokol \email{esokol@battelleecology.org}
+#' 
+#' This R script runs imports NDVI data and MCM LTER archive data of diatoms counts
+#' in cyanobacteria mat cores sampled from stream mats in Fryxell Basin in Taylor
+#' Valley in Antarctica, conducts an OMI analysis, and then creates 10 000 
+#' metacommunity simulations using MCSim (v0.4.9). 
+
+
+
 ###############################################
+# set seed should create same simulation outcomes as reported in the paper
+# Note that simulations were run using R v3.6. The set.seed() function might
+# produce different results in R v4+
+
 set.seed(1234)
 
+# select number of parallel threads to run
 n_cores <- 15
+
+# number of simulations
 n_sims <- 10000
 
+# required packages for this script
 library(tidyverse)
 library(parallel)
 library(ade4)
 library(vegan)
 
-# devtools::install_github('sokole/MCSim@dev')
-# library(MCSim)
+# Simulations used MCSim v0.4.9 with R v3.6 
+# devtools::install_github('sokole/MCSim@v0.4.9')
+library(MCSim)
 
+# modify options
 options(stringsAsFactors = FALSE)
-#############################################################
-#######################################
-#######################################
-#######################################
 
+
+#############################################################
 # read in diatom community data
-df_diatoms_in <- read_csv('source_data/MCM_Stream_Data_For_Eric_06012018.csv') %>%
+df_diatoms_in <- read_csv('Supplementary_Material_Data_Sheet_1_LTER_Algae_Ops_data.csv') %>%
   filter(
     !grepl('(?i)onyx',`TRANSECT NAME`) & 
       !grepl('(?i)adams',`TRANSECT NAME`) &
@@ -41,7 +64,8 @@ rows_green_bowles <- which(grepl('(?i)green|bowles', df_diatoms_in$`TRANSECT NAM
 
 # extract community data into wide format
 df_comm_wide <- df_diatoms_in %>% 
-  dplyr::select(-c(`SAMPLE ID`, `ACCESSION NUMBER`, `TRANSECT NAME`,
+  dplyr::select(-c(`record_no`,`region`,
+                   `SAMPLE ID`, `ACCESSION NUMBER`, `TRANSECT NAME`,
                    `STREAM ABBREVIATION`, LATITUDE_DD, LONGITUDE_DD,                         
                    `COLLECTION DATE`, SEASON, `MAT TYPE`,                             
                    `AFDM (mg/cm2)`, `CHL-A (ug/cm2)`,
@@ -57,7 +81,7 @@ names(df_comm_wide) <- names(df_comm_wide) %>%
 spp_list <- names(df_comm_wide)
 
 # hellinger gransform data for OMI analysis
-df_comm_wide_hell <- decostand(df_comm_wide, 'hellinger')
+df_comm_wide_hell <- decostand(df_comm_wide[,spp_list], 'hellinger')
 
 # extract sample info for observed records
 df_sample_info <- df_diatoms_in %>% 
@@ -113,7 +137,7 @@ df_niche <- data.frame(
 #########################################
 
 # read in NDVI data
-df_ndvi_in <- read_csv('df_fryxell_basin_corrected_NDVI.csv') %>% slice(1:500) %>%
+df_ndvi_in <- read_csv('Supplementary R Code/df_fryxell_basin_corrected_NDVI.csv') %>% slice(1:500) %>%
   arrange(desc(NDVI))
 
 # rescale NDVI metrics to have distribution that is similar to chl a data
@@ -176,24 +200,9 @@ parallel::clusterEvalQ(
 #######################################
 # sim params
 ###################
-# n_sims <- 10
-# 
-# network_flow_coef <- 10 # larger than 1 means flow downstream greater than flow upstream
-# branching_prob <- .05
-# 
-# niche_breadth_scaling_coef <- 4
-# m_immigration <- .05
-# nu <- 0.001
-# dispersal_kernel_slope <- 200
-# 
-# invasion_limit <- 30
-# n_sites <- 30
-# n_timesteps <- 100
 
 design_matrix <- data.frame(
   niche_breadth_scaling_coef = sample(c(1, 4, 20), n_sims, replace = TRUE),
-  # m_immigration = sample(c(0.001, 0.01, 0.1, 0.5), n_sims, replace = TRUE), 
-  # m_immigration_black_mats = c(0.01, 0.1, 0.5, 0.9),
   m_immigration = sample(c(.001, .005, .009, .01, .05, .09, .1, .5, .9), n_sims, replace = TRUE), 
   m_immigration_black_mats = sample(c(.001, .005, .009, .01, .05, .09, .1, .5, .9), n_sims, replace = TRUE),
   nu = 10^(-1*sample(1:6, n_sims, replace = TRUE)),
@@ -206,6 +215,11 @@ write_csv(design_matrix, 'design_matrix.csv')
 ################################
 ################################
 ################################
+
+# wrapper function to run simulations in parallel
+# the default parameter settings here were for testing only and 
+# are not used in the actual simulations (see the fxn call using 
+# clusterMap below). 
 fnx <- function(
   niche_breadth_scaling_coef = 4,
   m_immigration = .01, 
@@ -298,6 +312,9 @@ fnx <- function(
 # ########################################
 # ########################################
 # ########################################
+
+
+# test run commented out
 # i <- 1
 # fnx(niche_breadth_scaling_coef = design_matrix$niche_breadth_scaling_coef[i],
 #     m_immigration = design_matrix$m_immigration[i],
@@ -307,6 +324,8 @@ fnx <- function(
 #     i_sim = design_matrix$i_sim[i],
 #     path_to_read_data = getwd())
 
+
+# use clusterMap to run simulations in parallel
 clusterMap(
   cl = my_cl,
   fun = fnx,

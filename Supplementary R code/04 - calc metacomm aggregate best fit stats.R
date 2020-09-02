@@ -1,33 +1,47 @@
+#' R Script 04 for:
+#' Sokol ER, Barrett JE, Kohler TJ, McKnight DM, Salvatore MR and Stanish LF (2020)
+#'  Evaluating Alternative Metacommunity Hypotheses for Diatoms in the McMurdo Dry
+#'  Valleys Using Simulations and Remote Sensing Data. Front. Ecol. Evol. 8:521668. 
+#'  doi: 10.3389/fevo.2020.521668
+#'
+#' @author Eric R. Sokol \email{esokol@battelleecology.org}
+#' 
+#' This R script calculates alpha, beta, and gamma diversity for each simulation outcome
+#' at timesteps 1 and 100. Then calculates Chi-squared fit statistics as described in 
+#' the article cited above.
+
+
+
+# clear out workspace
 rm(list=ls())
 gc()
 
-# # --------------------------------------------
-# # -- INFO needed to calc stats
-# # --------------------------------------------
-# scenario.ID<-'DISPERSAL_EXAMPLES'
-SIM_DIR_NAME <- 'C:/Users/esokol/Box/PROJECTS/B235/Metacomm Sims/R_sims_v2_10000_reps/SIM_RESULTS'
 
-# --------------------------------------------
-# --------------------------------------------
-# --------------------------------------------
-# --------------------------------------------
+# set path to directory with sim outputs
+# SIM_DIR_NAME <- MY_PATH_TO_SIMULATION_OUTPUT_DIRECTORY
+
+
+# set options
 options(stringsAsFactors = FALSE)
 
+
+# load required packaqes
 require(vegetarian)
 require(tidyverse)
 
-#######################################
-#######################################
-#######################################
-#######################################
-# --------------------------------------------
-# --------------------------------------------
-# --------------------------------------------
-# --------------------------------------------
-# SIM_DIR_NAME<-paste('SIM',scenario.ID,sep='_')  # Directory name
 
-d_sim_metadata <- read_csv('d_sim_metadata_streamMetacommunities.csv')
-RDATA.list <- d_sim_metadata$sim_id %>% paste0('.rda')
+# set paths for reading and writing data
+# you may need to alter your path to the directory with this table
+read_file_path <- "Supplementary R Code"
+write_file_path <- "Supplementary R Code"
+
+
+# read in metadata file
+d_sim_metadata <- read_csv(paste0(read_file_path,"/","d_sim_metadata_streamMetacommunities.csv"))
+
+
+# modify sim_id to create sim filenames that can be read into R env
+RDATA.list <- d_sim_metadata$sim_id %>% paste0(".rda")
 
 
 
@@ -35,17 +49,25 @@ RDATA.list <- d_sim_metadata$sim_id %>% paste0('.rda')
 ##################################
 ##################################
 ##################################
+
+# loop to calculate biodiversity summary statistics for first and final time step
+# of each simulation.Summary stats include alpha, beta, and gamma diversity
+
+
+
 # i.RDATA <- RDATA.list[1]
 
+
+# wrapper function that can be called for parallel processing
 fnx <- function(i.RDATA,
                 time_steps_to_use = c(1,100),
-                SIM_DIR_NAME = 'SIM_RESULTS'){
+                SIM_DIR_NAME = "SIM_RESULTS"){
 
   d_results <- data.frame()
   
   try({
     sim.result <- NULL
-    i.RDATA.filename<-paste(SIM_DIR_NAME,i.RDATA,sep='/')
+    i.RDATA.filename<-paste(SIM_DIR_NAME,i.RDATA,sep="/")
     
     load(i.RDATA.filename)
     
@@ -65,17 +87,17 @@ fnx <- function(i.RDATA,
       alpha_q1 = map(data_wide,
                   function(x){
                     x <- x %>% as.data.frame()
-                    return(vegetarian::d(abundances = x, lev = 'alpha', q = 1))
+                    return(vegetarian::d(abundances = x, lev = "alpha", q = 1))
                   }) %>% unlist(),
       beta_q1 = map(data_wide,
                      function(x){
                        x <- x %>% as.data.frame()
-                       return(vegetarian::d(abundances = x, lev = 'beta', q = 1))
+                       return(vegetarian::d(abundances = x, lev = "beta", q = 1))
                      }) %>% unlist(),
       gamma_q1 = map(data_wide,
                     function(x){
                       x <- x %>% as.data.frame()
-                      return(vegetarian::d(abundances = x, lev = 'gamma', q = 1))
+                      return(vegetarian::d(abundances = x, lev = "gamma", q = 1))
                     }) %>% unlist())
     
     
@@ -93,8 +115,8 @@ fnx <- function(i.RDATA,
       scenario_id = scenario.ID,
       sim_id = sim.ID,
       sim_filename = i.RDATA,
-      note = 'error in div calc')
-    print(paste0('ERROR in div calc for ',i.RDATA))
+      note = "error in div calc")
+    print(paste0("ERROR in div calc for ",i.RDATA))
   }else{
     print(i.RDATA)
   }
@@ -114,17 +136,9 @@ d_metacomm_stats <- apply(
   FUN = fnx,
   SIM_DIR_NAME = SIM_DIR_NAME) %>% bind_rows()
 
-# # remove duplicates
-# d_metacomm_unique_obs <- d_metacomm_stats %>% 
-#   select(sim_id, timestep) %>%
-#   distinct()
-# 
-# d_metacomm_stats %>%
-#   filter(sim_id == 'SIM_METACOMM_nicheScaling-4_m-0.1_nu-0.001_w-1e+05_rep-854_2019-08-29_200713_20190829_200941')
-  
+
 # write out results
-readr::write_csv(d_metacomm_stats, path = paste0('d_metacomm_aggregate_stats_',Sys.Date(), '.csv'))
-# d_metacomm_stats <- readr::read_csv('d_metacomm_aggregate_stats_2019-09-10.csv')
+readr::write_csv(d_metacomm_stats, path = paste0(write_file_path,"/d_metacomm_aggregate_stats_",Sys.Date(), ".csv"))
 
 
 # calc fit stats
@@ -132,11 +146,8 @@ sd_alpha = sd(d_metacomm_stats$alpha_q1)
 sd_beta = sd(d_metacomm_stats$beta_q1)
 sd_gamma = sd(d_metacomm_stats$gamma_q1)
 
-# d_metacomm_stats_summary <- d_metacomm_stats %>%
-#   group_by(sim_id) %>%
-#   summarize(n_obs = n())
-# d_metacomm_stats_summary %>% filter(n_obs != 2)
 
+# make data frame with summary stats
 d_metacomm_stats <- d_metacomm_stats %>% group_by(sim_id) %>%
   summarise_at(
     vars(alpha_q1, beta_q1, gamma_q1),
@@ -148,6 +159,6 @@ d_metacomm_stats <- d_metacomm_stats %>% group_by(sim_id) %>%
     chi_sq_tot = alpha_chi_sq + beta_chi_sq + gamma_chi_sq)
 
 # write out fit stats
-write_csv(d_metacomm_stats, paste0('d_metacomm_fit_stats_aggregate_' ,Sys.Date(), '.csv'))
+write_csv(d_metacomm_stats, paste0(write_file_path,"/d_metacomm_fit_stats_aggregate_" ,Sys.Date(), ".csv"))
 
 
