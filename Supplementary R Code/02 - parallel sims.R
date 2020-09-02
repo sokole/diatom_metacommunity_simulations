@@ -6,7 +6,7 @@
 #'
 #' @author Eric R. Sokol \email{esokol@battelleecology.org}
 #' 
-#' This R script runs imports NDVI data and MCM LTER archive data of diatoms counts
+#' This R script imports NDVI data and MCM LTER archive data of diatoms counts
 #' in cyanobacteria mat cores sampled from stream mats in Fryxell Basin in Taylor
 #' Valley in Antarctica, conducts an OMI analysis, and then creates 10 000 
 #' metacommunity simulations using MCSim (v0.4.9). 

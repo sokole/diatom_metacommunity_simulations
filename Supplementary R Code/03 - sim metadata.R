@@ -7,7 +7,7 @@
 #' @author Eric R. Sokol \email{esokol@battelleecology.org}
 #' 
 #' This R script creates a metadata file with information about each simulation 
-#' scenario parsed for its output filename. 
+#' scenario parsed from its output file name. 
 
 
 
